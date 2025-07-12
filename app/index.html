@@ -138,10 +138,11 @@
       background-color: white;
       border: 2px solid black;
       padding: 10px 20px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
       border-radius: 6px;
+      color: black;
     }
 
     .popup {
@@ -189,28 +190,27 @@
 
   <div class="login-container">
     <img src="logo_たびなび.png" alt="ロゴ" class="logo">
-
-    <form action="home.html" method="GET">
+    <form>
       <div class="form-box">
         <label for="id">ID</label>
         <input type="text" id="id" name="id">
 
-        <label for="pass">Pass</label>
+        <label for="pass">Password</label>
         <input type="password" id="pass" name="pass">
 
         <div class="links">
           <a onclick="showPopup('signupPopup')">新規登録</a>
           <a onclick="showPopup('forgotPopup')">パスワードを忘れたとき</a>
         </div>
-
         <button type="submit" class="login-button">ログイン</button>
       </div>
     </form>
 
+
     <div class="popup" id="signupPopup">
       <div class="popup-content">
         <span class="close-btn" onclick="closePopup('signupPopup')">&times;</span>
-        <form action="signup.html" method="POST">
+        <form id="signupForm">
           <label for="email">メールアドレス</label>
           <input type="email" id="email" name="email" required>
 
@@ -224,6 +224,7 @@
         </form>
       </div>
     </div>
+
 
     <div class="popup" id="forgotPopup">
       <div class="popup-content">
@@ -241,8 +242,14 @@
     </div>
 
   </div>
-
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
+    const SUPABASE_URL = 'https://ebyxjgdbarcxzyerhiqm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVieXhqZ2RiYXJjeHp5ZXJoaXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMTcxMDksImV4cCI6MjA2Nzg5MzEwOX0.LXL7sCS7hEBYUDNZFpiJnDbsmZ7FpKbeNfMd2tLr08w';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     function showPopup(popupId) {
       document.getElementById(popupId).style.display = 'flex';
     }
@@ -270,6 +277,50 @@
         overlay.style.display = 'block';
       }
     }
+    // 新規登録処理
+    document.querySelector('#signupForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const email = document.querySelector('#email').value;
+      const password = document.querySelector('#newPass').value;
+      const username = document.querySelector('#username').value;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username: username }
+        }
+      });
+
+      if (error) {
+        alert('登録失敗: ' + error.message);
+      } else {
+        alert('確認メールを送信しました！');
+        closePopup('signupPopup');
+      }
+    });
+
+    document.querySelector("form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const email = document.querySelector("#id").value;
+      const password = document.querySelector("#pass").value;
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert("ログイン失敗: " + error.message); // ← エラー内容が表示される
+      } else {
+        alert("ログイン成功！");
+        window.location.href = "home.html";
+      }
+    });
+
+
   </script>
 </body>
 </html>
