@@ -79,10 +79,10 @@
       position: absolute;
       top: 5px;
       right: 10px;
-      background: none;
-      border: none;
       padding: 0;
+      background: #c5c3bf;
       cursor: pointer;
+      border-radius: 10px;  /* ← 丸くする！ */
       width: 40px;
       height: 40px;
       z-index: 10;
@@ -129,6 +129,38 @@
       cursor: pointer;
     }
 
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 50;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      width: 300px;
+      max-width: 80%;
+      margin: 15% auto;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    .share-icon-button {
+      position: absolute;
+      top: 55px;
+      right: 10px;
+      padding: 0;
+      background: #c5c3bf;
+      cursor: pointer;
+      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      z-index: 10;
+    }
+
+
     #memoModal {
       display: none;
       position: fixed;
@@ -153,12 +185,30 @@
     #memoModal button {
       margin-right: 60px;
     }
+
+    #addModal {
+      width: 100%;
+      max-width: 480px;  /* ← .shiori-box と同じに！ */
+    }
+
+
   </style>
 </head>
 <body>
   <div class="header">
     <img src="logo_たびなび.png" class="logo" alt="ロゴ">
     <div class="trip-title">2025.9.3~7 in 北海道</div>
+  </div>
+
+  <!-- ▼ 共有モーダル -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <h3>しおりを共有</h3>
+      <label>メールアドレス：</label><br>
+      <input type="email" id="shareEmail" placeholder="example@example.com" required><br><br>
+      <button onclick="sendShare()">送信</button>
+      <button onclick="closeShareModal()">キャンセル</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -169,12 +219,18 @@
 
   <!-- ▼ 1日目 -->
   <div class="tab-content active">
+    <!-- ▼ 共有ボタン -->
+
     <div class="shiori-box">
 
       <!-- 1日目の shiori-box の中 -->
       <button class="edit-icon-button" data-type="add" data-tab="0" aria-label="予定追加">
         <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
       </button>
+      <button id="shareButton" class="share-icon-button">
+        <img src="共有画面.png" alt="共有" width="30" height="30">
+      </button>
+
         <!-- <img src="編集ボタン.png" class="edit-icon" alt="予定追加"> -->
       </button>
       <div class="timeline">
@@ -299,6 +355,28 @@
         });
       });
     });
+
+    // 共有モーダルの開閉処理
+    document.getElementById('shareButton').addEventListener('click', function () {
+      document.getElementById('shareModal').style.display = 'block';
+    });
+
+    function closeShareModal() {
+      document.getElementById('shareModal').style.display = 'none';
+      document.getElementById('shareEmail').value = '';
+    }
+
+    function sendShare() {
+      const email = document.getElementById('shareEmail').value;
+      if (!email) {
+        alert("メールアドレスを入力してください");
+        return;
+      }
+
+      // 本来はここでメール送信のAPI呼び出しなどを行う
+      alert(`${email} にしおりを共有しました！`);
+      closeShareModal();
+    }
 
   </script>
 </body>
