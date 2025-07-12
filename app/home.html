@@ -69,6 +69,15 @@
       cursor: pointer;
     }
 
+    .trip-item-wrapper {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .trip-checkbox {
+      margin-right: 10px;
+    }
+
     .scroll-list {
       max-height: 180px;
       overflow-y: auto;
@@ -121,11 +130,13 @@
 
   <div id="modal">
     <h3>しおりの作成</h3>
-    <input type="text" id="dateInput" placeholder="例：2025.10">
-    <input type="text" id="placeInput" placeholder="例：沖縄">
+    <label>開始日：<input type="date" id="startDateInput"></label><br>
+    <label>終了日：<input type="date" id="endDateInput"></label><br>
+    <input type="text" id="placeInput" placeholder="例：沖縄"><br>
     <button onclick="addTrip()">追加</button>
     <button onclick="closeModal()">キャンセル</button>
   </div>
+
 
   <div class="section">
     <div class="section-title">今月の旅行 ✈️</div>
@@ -137,8 +148,10 @@
     <div class="scroll-list" id="tripList">
     </div>
   </div>
+
   <button class="back-button" onclick="history.back();">ホームに戻る</button>
-  
+  <button class="back-button" onclick="deleteSelectedTrips()">選択したしおりを削除</button>
+
   <script>
     function openModal() {
       document.getElementById('modal').style.display = 'block';
@@ -146,9 +159,11 @@
 
     function closeModal() {
       document.getElementById('modal').style.display = 'none';
-      document.getElementById('dateInput').value = '';
+      document.getElementById('startDateInput').value = '';
+      document.getElementById('endDateInput').value = '';
       document.getElementById('placeInput').value = '';
     }
+
 
     function saveTripsToStorage(trips) {
       localStorage.setItem('trips', JSON.stringify(trips));
@@ -159,37 +174,56 @@
       return trips ? JSON.parse(trips) : [];
     }
 
-    function renderTripButton(date, place) {
+    function renderTripButton(label, place, params) {
       const tripList = document.getElementById('tripList');
-      const newBtn = document.createElement('button');
-      newBtn.className = 'trip-button';
-      newBtn.textContent = `${date} in ${place}`;
-      newBtn.onclick = () => {
-        location.href = `shiori.html?date=${encodeURIComponent(date)}&place=${encodeURIComponent(place)}`;
-      };
-      tripList.insertBefore(newBtn, tripList.firstChild);
-    }
 
+      const wrapper = document.createElement('div');
+      wrapper.className = 'trip-item-wrapper';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'trip-checkbox';
+
+      const button = document.createElement('button');
+      button.className = 'trip-button';
+      button.textContent = label;
+      button.onclick = () => {
+        location.href = `shiori.html?date=${encodeURIComponent(params)}&place=${encodeURIComponent(place)}`;
+      };
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(button);
+      tripList.insertBefore(wrapper, tripList.firstChild);
+    }
     function addTrip() {
-      const date = document.getElementById('dateInput').value.trim();
+      const startDateStr = document.getElementById('startDateInput').value;
+      const endDateStr = document.getElementById('endDateInput').value;
       const place = document.getElementById('placeInput').value.trim();
 
-      if (!date || !place) {
-        alert("日付と場所を入力してください");
+      if (!startDateStr || !endDateStr || !place) {
+        alert("開始日・終了日・場所をすべて入力してください");
         return;
       }
 
-      // 保存・表示
-      renderTripButton(date, place);
+      const startDate = new Date(startDateStr);
+      const year = startDate.getFullYear();
+      const month = (startDate.getMonth() + 1).toString().padStart(2, '0');
 
-      // 保存用配列に追加
+      const label = `${year}.${month} in ${place}`;
+      const params = `${year}.${month}.${startDate.getDate()}-${new Date(endDateStr).getDate()}`;
+
+      // ボタン生成
+      renderTripButton(label, place, params);
+
+      // 保存
       const trips = loadTripsFromStorage();
-      trips.unshift({ date, place });
+      trips.unshift({ label, place, params });
       saveTripsToStorage(trips);
 
       closeModal();
       updateCurrentTrip();
     }
+
 
     function updateCurrentTrip() {
       const tripList = document.querySelectorAll('#tripList .trip-button');
@@ -221,14 +255,39 @@
         currentTripArea.innerHTML = '<p>今月の旅行はまだありません。</p>';
       }
     }
-
     document.addEventListener("DOMContentLoaded", () => {
       const savedTrips = loadTripsFromStorage();
-      savedTrips.forEach(({ date, place }) => {
-        renderTripButton(date, place);
+      savedTrips.forEach(({ label, place, params }) => {
+        renderTripButton(label, place, params);
       });
       updateCurrentTrip();
     });
+    function deleteSelectedTrips() {
+      const checkboxes = document.querySelectorAll('.trip-checkbox');
+      const trips = loadTripsFromStorage();
+      let updatedTrips = trips;
+
+      let deletedLabels = [];
+
+      checkboxes.forEach((checkbox, idx) => {
+        if (checkbox.checked) {
+          const label = checkbox.nextSibling.textContent;
+          checkbox.parentElement.remove();  // 表示上削除
+          updatedTrips = updatedTrips.filter(t => t.label !== label);
+          deletedLabels.push(label);
+        }
+      });
+
+      if (deletedLabels.length > 0) {
+        if (confirm(`${deletedLabels.length} 件のしおりを削除しますか？`)) {
+          saveTripsToStorage(updatedTrips);
+          updateCurrentTrip();
+        }
+      } else {
+        alert("削除するしおりを選択してください");
+      }
+    }
+
   </script>
 
 </body>
