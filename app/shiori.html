@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>しおり詳細</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
+
   <style>
     body {
       font-family: sans-serif;
@@ -25,10 +27,12 @@
     }
 
     .trip-title {
-      font-size: 30px;
-      border: 2px solid #0f1618;
-      padding: 10px 20px;
-      border-radius: 10px;
+      font-family: 'Zen Maru Gothic', 'Kiwi Maru', sans-serif;
+      font-size: 25px;
+      padding: 10px 3px;
+
+      border: none;
+      border-bottom: 2px solid #333;  /* 下線を追加 */
     }
 
     .tabs {
@@ -62,7 +66,7 @@
 
     .shiori-box {
       background-color: #f0f0f0;
-      border-radius: 20px;
+      border-radius: 10px;
       padding: 10px;
       margin-bottom: 20px;
       position: relative;
@@ -109,7 +113,7 @@
       width: 10px;
       height: 10px;
       background-color: #003344;
-      border-radius: 50%;
+      border-radius: 10px;
     }
 
     .entry-label {
@@ -147,17 +151,15 @@
       margin: 15% auto;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
-    .share-icon-button {
-      position: absolute;
-      top: 55px;
-      right: 10px;
-      padding: 0;
-      background: #c5c3bf;
-      cursor: pointer;
+
+    .share_button{
+      border: 2px solid #0f1618;
       border-radius: 10px;
       width: 40px;
       height: 40px;
-      z-index: 15;
+      cursor: pointer;
+      right: 10px;
+      top: 10px;
     }
 
 
@@ -197,7 +199,8 @@
 <body>
   <div class="header">
     <img src="logo_たびなび.png" class="logo" alt="ロゴ">
-    <div class="trip-title">2025.9.3~7 in 北海道</div>
+    <div class="trip-title"></div>
+    <img src="share_logo.png" class="share_button" id="shareButton" alt="共有" >
   </div>
 
   <!-- ▼ 共有モーダル -->
@@ -225,10 +228,10 @@
   <!-- ▼ 予定追加モーダル -->
   <div id="addModal" class="modal" style="display:none;">
     <div class="modal-content">
-      <h3>予定を追加</h3>
+      <h3>予定を<span id="addModalMode">追加</span></h3>
       <label>時間：<input type="time" id="timeInput"></label><br>
       <label>目的地：<input type="text" id="descInput" placeholder="例：カフェ"></label><br>
-      <button onclick="addSchedule()">追加</button>
+      <button onclick="saveSchedule()">保存</button>
       <button onclick="closeAddModal()">キャンセル</button>
     </div>
   </div>
@@ -239,6 +242,7 @@
   <script>
     let currentLabel = null;
     let currentTabIndex = 0;
+    let editingEntry = null; // 編集対象
 
     function switchTab(index) {
       const tabs = document.querySelectorAll('.tab');
@@ -263,9 +267,63 @@
       document.getElementById('memoModal').style.display = 'none';
     }
 
-    function openAddModal(index) {
+    function openAddModal(index, entry = null) {
       currentTabIndex = index;
       document.getElementById('addModal').style.display = 'block';
+      const timeInput = document.getElementById('timeInput');
+      const descInput = document.getElementById('descInput');
+      const modeLabel = document.getElementById('addModalMode');
+
+      if (entry) {
+        editingEntry = entry;
+        timeInput.value = entry.getAttribute('data-time');
+        descInput.value = entry.querySelector('.entry-label').textContent;
+        modeLabel.textContent = '編集';
+      } else {
+        editingEntry = null;
+        timeInput.value = '';
+        descInput.value = '';
+        modeLabel.textContent = '追加';
+      }
+    }
+
+    function saveSchedule() {
+      const time = document.getElementById('timeInput').value;
+      const desc = document.getElementById('descInput').value;
+      if (!time || !desc) {
+        alert("時間と内容を入力してください");
+        return;
+      }
+
+      const savedKey = getSavedKey();
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+
+      if (editingEntry) {
+        // localStorageから更新対象を探す
+        const oldTime = editingEntry.getAttribute('data-time');
+        const oldDesc = editingEntry.querySelector('.entry-label').textContent;
+        for (let entry of schedules) {
+          if (entry.time === oldTime && entry.desc === oldDesc && entry.tabIndex === currentTabIndex) {
+            entry.time = time;
+            entry.desc = desc;
+            break;
+          }
+        }
+        localStorage.setItem(savedKey, JSON.stringify(schedules));
+
+        // DOM更新
+        editingEntry.setAttribute('data-time', time);
+        editingEntry.innerHTML = `${time} <span class="entry-label" onclick="handleClick(this)" data-note="">${desc}</span>
+          <button onclick="editSchedule(this)">編集</button>`;
+        editingEntry = null;
+      } else {
+        const entry = { time, desc, note: '', tabIndex: currentTabIndex };
+        schedules.push(entry);
+        localStorage.setItem(savedKey, JSON.stringify(schedules));
+        renderSchedule(entry);
+      }
+
+      closeAddModal();
     }
 
     function closeAddModal() {
@@ -367,9 +425,7 @@
       schedules.forEach(renderSchedule);
 
       // 共有ボタン
-      document.getElementById('shareButton').addEventListener('click', function () {
-        document.getElementById('shareModal').style.display = 'block';
-      });
+
     });
 
     document.getElementById('shareButton').addEventListener('click', function () {
@@ -429,12 +485,19 @@
       const newEntry = document.createElement('div');
       newEntry.className = 'timeline-entry';
       newEntry.setAttribute('data-time', entry.time);
-      newEntry.innerHTML = `${entry.time} <span class="entry-label" onclick="handleClick(this)" data-note="${entry.note || ''}">${entry.desc}</span>`;
-      targetTimeline.appendChild(newEntry);
+      newEntry.innerHTML = `${entry.time} <span class="entry-label" onclick="handleClick(this)" data-note="${entry.note || ''}">${entry.desc}</span>
+        <button onclick="editSchedule(this)">編集</button>`;
 
+      targetTimeline.appendChild(newEntry);
       sortTimelineEntries(targetTimeline);
     }
 
+    function editSchedule(button) {
+      const entry = button.closest('.timeline-entry');
+      const tab = entry.closest('.tab-content');
+      const tabIndex = Array.from(document.querySelectorAll('.tab-content')).indexOf(tab);
+      openAddModal(tabIndex, entry);
+    }
   </script>
 </body>
 </html>
