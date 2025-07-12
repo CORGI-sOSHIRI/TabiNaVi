@@ -244,7 +244,13 @@
   <!-- ▼ 2日目 -->
   <div class="tab-content">
     <div class="shiori-box">
-      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+      <!-- 2日目の shiori-box の中 -->
+      <button class="edit-icon-button" data-type="add" data-tab="1" aria-label="予定追加">
+        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+      </button>
+      <button id="shareButton" class="share-icon-button">
+        <img src="共有画面.png" alt="共有" width="30" height="30">
+      </button>
       <div class="timeline">
         <div class="timeline-entry">8:30 <span class="entry-label" onclick="handleClick(this)" data-note="">ホテル出発</span></div>
         <div class="timeline-entry">9:30 <span class="entry-label" onclick="handleClick(this)" data-note="">ベーカリー</span></div>
@@ -256,7 +262,13 @@
   <!-- ▼ 3日目 -->
   <div class="tab-content">
     <div class="shiori-box">
-      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+      <!-- 3日目の shiori-box の中 -->
+      <button class="edit-icon-button" data-type="add" data-tab="2" aria-label="予定追加">
+        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+      </button>
+      <button id="shareButton" class="share-icon-button">
+        <img src="共有画面.png" alt="共有" width="30" height="30">
+      </button>
       <div class="timeline">
         <div class="timeline-entry">9:00 <span class="entry-label" onclick="handleClick(this)" data-note="">朝食</span></div>
         <div class="timeline-entry">11:00 <span class="entry-label" onclick="handleClick(this)" data-note="">観光</span></div>
@@ -277,7 +289,7 @@
   <div id="addModal" style="display:none; position:fixed; top:30%; left:10%; width:80%; background:#fff; border:2px solid #003344; border-radius:10px; padding:15px; z-index:20;">
     <h3>予定を追加</h3>
     <label>時間：<input type="time" id="timeInput"></label><br>
-    <label>内容：<input type="text" id="descInput" placeholder="例：カフェで休憩"></label><br>
+    <label>目的地 :<input type="text" id="descInput" placeholder="例：カフェ"></label><br>
     <button onclick="addSchedule()">追加</button>
     <button onclick="closeAddModal()">キャンセル</button>
   </div>
