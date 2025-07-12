@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>しおり詳細</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 10px;
+      max-width: 480px;
+      margin: auto;
+      background-color: #fff;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      height: 60px;
+    }
+
+    .trip-title {
+      font-size: 24px;
+      border: 2px solid #0f1618;
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+      gap: 5px;
+    }
+
+    .tab {
+      padding: 5px 10px;
+      border: 2px solid #000;
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      background-color: #dcdcdc;;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+
+    .tab.active {
+      background-color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .shiori-box {
+      background-color: #f0f0f0;
+      border-radius: 20px;
+      padding: 10px;
+      margin-bottom: 20px;
+      position: relative;
+      min-height: 400px;
+      transition: background-color 0.3s ease;
+      border: none; /* ← デフォルトでは枠なし */
+    }
+
+    /* アクティブな日付の背景と枠線 */
+    .tab-content.active .shiori-box {
+      background-color: #ffffff;
+      border: 2px solid #000000;
+    }
+
+
+    .edit-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+
+    .timeline {
+      position: relative;
+      margin-left: 20px;
+      border-left: 2px solid black;
+      padding-left: 15px;
+    }
+
+    .timeline-entry {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-entry::before {
+      content: '';
+      position: absolute;
+      left: -21px;
+      top: 3px;
+      width: 10px;
+      height: 10px;
+      background-color: #003344;
+      border-radius: 50%;
+    }
+
+    .gap {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .back-button {
+      display: block;
+      margin: 0 auto;
+      background-color: white;
+      border: 2px solid black;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #editModal {
+      display: none;
+      position: fixed;
+      top: 30%;
+      left: 10%;
+      width: 80%;
+      background: #fff;
+      border: 2px solid #003344;
+      border-radius: 10px;
+      padding: 15px;
+      z-index: 10;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    #editModal input {
+      width: 100%;
+      padding: 5px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+    }
+
+    #editModal button {
+      margin-right: 60px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="logo_たびなび.png" class="logo" alt="ロゴ">
+    <div class="trip-title">2025.9.3~7 in 北海道</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">1日目</div>
+    <div class="tab" onclick="switchTab(1)">2日目</div>
+    <div class="tab" onclick="switchTab(2)">3日目</div>
+  </div>
+
+  <!-- ▼ 1日目 -->
+  <div class="tab-content active">
+    <div class="shiori-box">
+      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+      <div class="timeline">
+        <div class="timeline-entry">10:00 空港到着</div>
+        <div class="timeline-entry">12:00 ジンギスカンランチ</div>
+        <div class="timeline-entry">14:00 ホテルチェックイン</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▼ 2日目 -->
+  <div class="tab-content">
+    <div class="shiori-box">
+      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+      <div class="timeline">
+        <div class="timeline-entry">8:30 ホテル出発</div>
+        <div class="timeline-entry">9:30 ベーカリー</div>
+        <div class="timeline-entry">11:20 城</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▼ 3日目 -->
+  <div class="tab-content">
+    <div class="shiori-box">
+      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+      <div class="timeline">
+        <div class="timeline-entry">9:00 朝食</div>
+        <div class="timeline-entry">11:00 観光</div>
+        <div class="timeline-entry">14:00 空港へ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編集フォーム -->
+  <div id="editModal">
+    <h3>予定を追加</h3>
+    <label>時間：<input type="time" id="timeInput"></label><br>
+    <label>内容：<input type="text" id="descInput" placeholder="例：カフェで休憩"></label><br>
+    <button onclick="addSchedule()">追加</button>
+    <button onclick="closeModal()">キャンセル</button>
+  </div>
+
+  <button class="back-button" onclick="history.back();">たび一覧に戻る</button>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      function switchTab(index) {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach((tab, i) => {
+          tab.classList.toggle('active', i === index);
+        });
+
+        contents.forEach((content, i) => {
+          content.classList.toggle('active', i === index);
+        });
+      }
+
+      function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+        document.getElementById('timeInput').value = '';
+        document.getElementById('descInput').value = '';
+      }
+
+      function addSchedule() {
+        const time = document.getElementById('timeInput').value;
+        const desc = document.getElementById('descInput').value;
+
+        if (!time || !desc) {
+          alert("時間と内容を入力してください");
+          return;
+        }
+
+        const activeTimeline = document.querySelector('.tab-content.active .timeline');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'timeline-entry';
+        newEntry.textContent = `${time} ${desc}`;
+        activeTimeline.appendChild(newEntry);
+
+        closeModal();
+      }
+
+      // 編集ボタンにクリックイベントを設定
+      const editButtons = document.querySelectorAll('.edit-icon');
+      editButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          document.getElementById('editModal').style.display = 'block';
+        });
+      });
+
+      // グローバル関数として使えるように
+      window.switchTab = switchTab;
+      window.addSchedule = addSchedule;
+      window.closeModal = closeModal;
+    });
+  </script>
+</body>
+</html>

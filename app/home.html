@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>しおり作成</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: white;
+      margin: 0;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+    }
+
+    .menu-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .menu-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .create-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 auto 20px auto;
+      padding: 15px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #003344;
+      border-radius: 10px;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .bookmark-icon {
+      font-size: 24px;
+    }
+
+    .section {
+      background-color: #f0f0f0;
+      border-radius: 20px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+
+    .trip-button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px 0;
+      border: 2px solid #003344;
+      border-radius: 10px;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .scroll-list {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .back-button {
+      display: block;
+      margin: 0 auto;
+      margin-top: 20px;
+      background-color: white;
+      border: 2px solid black;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 25%;
+      left: 10%;
+      width: 80%;
+      background: #fff;
+      border: 2px solid #003344;
+      border-radius: 10px;
+      padding: 20px;
+      z-index: 10;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    #modal input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    #modal button {
+      margin-top: 10px;
+      padding: 8px 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="menu-wrapper">
+    <img src="歯車.png" alt="メニュー" class="menu-icon">
+  </div>
+
+  <button class="create-button" onclick="openModal()">
+    <span class="bookmark-icon">🔖</span>
+    しおり作成
+  </button>
+
+  <div id="modal">
+    <h3>しおりの作成</h3>
+    <input type="text" id="dateInput" placeholder="例：2025.10">
+    <input type="text" id="placeInput" placeholder="例：沖縄">
+    <button onclick="addTrip()">追加</button>
+    <button onclick="closeModal()">キャンセル</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">今月の旅行 ✈️</div>
+    <div id="currentTripArea"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">旅行の一覧</div>
+    <div class="scroll-list" id="tripList">
+      <button class="trip-button">2025.02 in 仙台</button>
+      <button class="trip-button">2024.09 in 東京</button>
+      <button class="trip-button" onclick="location.href='shiori.html'">2025.09 in 北海道</button>
+      <button class="trip-button">2024.09 in 長野</button>
+      <button class="trip-button">2024.08 in 京都</button>
+      <button class="trip-button">2024.07 in 福岡</button>
+      <button class="trip-button">2024.06 in 大阪</button>
+    </div>
+  </div>
+
+  <button class="back-button" onclick="history.back();">ホームに戻る</button>
+
+  <script>
+    function openModal() {
+      document.getElementById('modal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      document.getElementById('dateInput').value = '';
+      document.getElementById('placeInput').value = '';
+    }
+
+    function addTrip() {
+      const date = document.getElementById('dateInput').value.trim();
+      const place = document.getElementById('placeInput').value.trim();
+
+      if (!date || !place) {
+        alert("日付と場所を入力してください");
+        return;
+      }
+
+      const tripList = document.getElementById('tripList');
+      const newBtn = document.createElement('button');
+      newBtn.className = 'trip-button';
+      newBtn.textContent = `${date} in ${place}`;
+      tripList.insertBefore(newBtn, tripList.firstChild);
+
+      closeModal();
+      updateCurrentTrip(); // 新しい旅行を追加後に再評価
+    }
+
+    function updateCurrentTrip() {
+    const tripList = document.querySelectorAll('#tripList .trip-button');
+    const currentTripArea = document.getElementById('currentTripArea');
+
+    const today = new Date();
+    const thisYear = today.getFullYear();
+    const thisMonth = today.getMonth(); // 0-indexed
+
+    currentTripArea.innerHTML = "";
+
+    let found = false;
+
+    tripList.forEach(btn => {
+        const match = btn.textContent.match(/^(\d{4})\.(\d{2})/); // ← 修正ポイント！
+        if (match) {
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1;
+        if (y === thisYear && m === thisMonth) {
+            const copy = btn.cloneNode(true);
+            currentTripArea.appendChild(copy);
+            found = true;
+        }
+        }
+    });
+
+    if (!found) {
+        currentTripArea.innerHTML = '<p>今月の旅行はまだありません。</p>';
+    }
+    }
+
+
+    document.addEventListener("DOMContentLoaded", updateCurrentTrip);
+  </script>
+
+</body>
+</html>
