@@ -102,21 +102,35 @@
 
     #modal {
       display: none;
-      position: fixed;
-      top: 25%;
-      left: 10%;
-      width: 80%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 10;
+      
+      /* ↓ これを追加 */
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+
+    #modalContent {
       background: #fff;
       border: 2px solid black;
       border-radius: 10px;
       padding: 20px;
-      z-index: 10;
+      width: 90%;
+      max-width: 300px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
+
     #modal input {
-      width: 100%;
-      padding: 8px;
+      width: 90%;
+      padding: 8px 8px;
       margin-bottom: 10px;
     }
 
@@ -135,13 +149,16 @@
   </button>
 
   <div id="modal">
-    <h3>しおりの作成</h3>
-    <label>開始日：<input type="date" id="startDateInput"></label><br>
-    <label>終了日：<input type="date" id="endDateInput"></label><br>
-    <input type="text" id="placeInput" placeholder="例：沖縄"><br>
-    <button onclick="addTrip()">追加</button>
-    <button onclick="closeModal()">キャンセル</button>
+    <div id="modalContent">
+      <h3>しおりの作成</h3>
+      <label>開始日：<input type="date" id="startDateInput"></label><br>
+      <label>終了日：<input type="date" id="endDateInput"></label><br>
+      <input type="text" id="placeInput" placeholder="例：沖縄"><br>
+      <button onclick="addTrip()">追加</button>
+      <button onclick="closeModal()">キャンセル</button>
+    </div>
   </div>
+
 
 
   <div class="section">
@@ -160,15 +177,21 @@
 
   <script>
     function openModal() {
-      document.getElementById('modal').style.display = 'block';
+      const modal = document.getElementById('modal');
+      modal.style.display = 'flex';  // ← block → flex に変更
+      document.body.style.overflow = 'hidden'; // 背景スクロール防止（任意）
     }
 
+
     function closeModal() {
-      document.getElementById('modal').style.display = 'none';
+      const modal = document.getElementById('modal');
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto'; // 元に戻す
       document.getElementById('startDateInput').value = '';
       document.getElementById('endDateInput').value = '';
       document.getElementById('placeInput').value = '';
     }
+
 
 
     function saveTripsToStorage(trips) {
