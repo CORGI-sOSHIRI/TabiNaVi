@@ -157,7 +157,7 @@
       border-radius: 10px;
       width: 40px;
       height: 40px;
-      z-index: 10;
+      z-index: 15;
     }
 
 
@@ -227,9 +227,11 @@
       <button class="edit-icon-button" data-type="add" data-tab="0" aria-label="予定追加">
         <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
       </button>
-      <button id="shareButton" class="share-icon-button">
+      <!-- 各ボタン -->
+      <button class="share-icon-button" data-tab="0">
         <img src="共有画面.png" alt="共有" width="30" height="30">
       </button>
+
       <div class="timeline">
         <!-- 予定が入るためのリストみたいな -->
       </div>
@@ -277,12 +279,14 @@
   </div>
 
   <!-- ▼ 予定追加モーダル -->
-  <div id="addModal" style="display:none; position:fixed; top:30%; left:10%; width:80%; background:#fff; border:2px solid #003344; border-radius:10px; padding:15px; z-index:20;">
-    <h3>予定を追加</h3>
-    <label>時間：<input type="time" id="timeInput"></label><br>
-    <label>目的地 :<input type="text" id="descInput" placeholder="例：カフェ"></label><br>
-    <button onclick="addSchedule()">追加</button>
-    <button onclick="closeAddModal()">キャンセル</button>
+  <div id="addModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>予定を追加</h3>
+      <label>時間：<input type="time" id="timeInput"></label><br>
+      <label>目的地：<input type="text" id="descInput" placeholder="例：カフェ"></label><br>
+      <button onclick="addSchedule()">追加</button>
+      <button onclick="closeAddModal()">キャンセル</button>
+    </div>
   </div>
 
 
@@ -358,8 +362,16 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-      const editButtons = document.querySelectorAll('.edit-icon-button');
-      editButtons.forEach((button) => {
+      const params = new URLSearchParams(window.location.search);
+      const date = params.get("date");
+      const place = params.get("place");
+
+      if (date && place) {
+        document.querySelector('.trip-title').textContent = `${date} in ${place}`;
+      }
+      // 初期のタイムラインもソート
+      // イベントバインド（DOMContentLoaded 内）
+      document.querySelectorAll('.edit-icon-button').forEach(button => {
         button.addEventListener('click', () => {
           const type = button.dataset.type;
           const tabIndex = parseInt(button.dataset.tab);
@@ -368,9 +380,6 @@
           }
         });
       });
-
-      // 初期のタイムラインもソート
-      document.querySelectorAll('.timeline').forEach(timeline => sortTimelineEntries(timeline));
     });
 
     document.getElementById('shareButton').addEventListener('click', function () {

@@ -135,18 +135,10 @@
   <div class="section">
     <div class="section-title">旅行の一覧</div>
     <div class="scroll-list" id="tripList">
-      <button class="trip-button">2025.02 in 仙台</button>
-      <button class="trip-button">2024.09 in 東京</button>
-      <button class="trip-button" onclick="location.href='shiori.html'">2025.09 in 北海道</button>
-      <button class="trip-button">2024.09 in 長野</button>
-      <button class="trip-button">2024.08 in 京都</button>
-      <button class="trip-button">2024.07 in 福岡</button>
-      <button class="trip-button">2024.06 in 大阪</button>
     </div>
   </div>
-
   <button class="back-button" onclick="history.back();">ホームに戻る</button>
-
+  
   <script>
     function openModal() {
       document.getElementById('modal').style.display = 'block';
@@ -158,6 +150,26 @@
       document.getElementById('placeInput').value = '';
     }
 
+    function saveTripsToStorage(trips) {
+      localStorage.setItem('trips', JSON.stringify(trips));
+    }
+
+    function loadTripsFromStorage() {
+      const trips = localStorage.getItem('trips');
+      return trips ? JSON.parse(trips) : [];
+    }
+
+    function renderTripButton(date, place) {
+      const tripList = document.getElementById('tripList');
+      const newBtn = document.createElement('button');
+      newBtn.className = 'trip-button';
+      newBtn.textContent = `${date} in ${place}`;
+      newBtn.onclick = () => {
+        location.href = `shiori.html?date=${encodeURIComponent(date)}&place=${encodeURIComponent(place)}`;
+      };
+      tripList.insertBefore(newBtn, tripList.firstChild);
+    }
+
     function addTrip() {
       const date = document.getElementById('dateInput').value.trim();
       const place = document.getElementById('placeInput').value.trim();
@@ -167,48 +179,56 @@
         return;
       }
 
-      const tripList = document.getElementById('tripList');
-      const newBtn = document.createElement('button');
-      newBtn.className = 'trip-button';
-      newBtn.textContent = `${date} in ${place}`;
-      tripList.insertBefore(newBtn, tripList.firstChild);
+      // 保存・表示
+      renderTripButton(date, place);
+
+      // 保存用配列に追加
+      const trips = loadTripsFromStorage();
+      trips.unshift({ date, place });
+      saveTripsToStorage(trips);
 
       closeModal();
-      updateCurrentTrip(); // 新しい旅行を追加後に再評価
+      updateCurrentTrip();
     }
 
     function updateCurrentTrip() {
-    const tripList = document.querySelectorAll('#tripList .trip-button');
-    const currentTripArea = document.getElementById('currentTripArea');
+      const tripList = document.querySelectorAll('#tripList .trip-button');
+      const currentTripArea = document.getElementById('currentTripArea');
 
-    const today = new Date();
-    const thisYear = today.getFullYear();
-    const thisMonth = today.getMonth(); // 0-indexed
+      const today = new Date();
+      const thisYear = today.getFullYear();
+      const thisMonth = today.getMonth(); // 0-indexed
 
-    currentTripArea.innerHTML = "";
+      currentTripArea.innerHTML = "";
 
-    let found = false;
+      let found = false;
 
-    tripList.forEach(btn => {
-        const match = btn.textContent.match(/^(\d{4})\.(\d{2})/); // ← 修正ポイント！
+      tripList.forEach(btn => {
+        const match = btn.textContent.match(/^(\d{4})\.(\d{2})/);
         if (match) {
-        const y = parseInt(match[1], 10);
-        const m = parseInt(match[2], 10) - 1;
-        if (y === thisYear && m === thisMonth) {
+          const y = parseInt(match[1], 10);
+          const m = parseInt(match[2], 10) - 1;
+          if (y === thisYear && m === thisMonth) {
             const copy = btn.cloneNode(true);
+            copy.onclick = btn.onclick;
             currentTripArea.appendChild(copy);
             found = true;
+          }
         }
-        }
-    });
+      });
 
-    if (!found) {
+      if (!found) {
         currentTripArea.innerHTML = '<p>今月の旅行はまだありません。</p>';
-    }
+      }
     }
 
-
-    document.addEventListener("DOMContentLoaded", updateCurrentTrip);
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedTrips = loadTripsFromStorage();
+      savedTrips.forEach(({ date, place }) => {
+        renderTripButton(date, place);
+      });
+      updateCurrentTrip();
+    });
   </script>
 
 </body>
