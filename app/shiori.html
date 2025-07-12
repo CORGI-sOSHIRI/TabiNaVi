@@ -299,8 +299,7 @@
 
   <script>
     let currentLabel = null;
-    let currentTabIndex = 0; // ←追加
-
+    let currentTabIndex = 0;
 
     function switchTab(index) {
       const tabs = document.querySelectorAll('.tab');
@@ -329,11 +328,13 @@
       currentTabIndex = index;
       document.getElementById('addModal').style.display = 'block';
     }
+
     function closeAddModal() {
       document.getElementById('addModal').style.display = 'none';
       document.getElementById('timeInput').value = '';
       document.getElementById('descInput').value = '';
     }
+
     function addSchedule() {
       const time = document.getElementById('timeInput').value;
       const desc = document.getElementById('descInput').value;
@@ -347,28 +348,40 @@
 
       const newEntry = document.createElement('div');
       newEntry.className = 'timeline-entry';
+      newEntry.setAttribute('data-time', time);
       newEntry.innerHTML = `${time} <span class="entry-label" onclick="handleClick(this)" data-note="">${desc}</span>`;
       targetTimeline.appendChild(newEntry);
 
+      sortTimelineEntries(targetTimeline);
       closeAddModal();
+    }
+
+    function sortTimelineEntries(timeline) {
+      const entries = Array.from(timeline.querySelectorAll('.timeline-entry'));
+      entries.sort((a, b) => {
+        const timeA = a.getAttribute('data-time') || a.textContent.trim().slice(0, 5);
+        const timeB = b.getAttribute('data-time') || b.textContent.trim().slice(0, 5);
+        return timeA.localeCompare(timeB);
+      });
+      entries.forEach(entry => timeline.appendChild(entry));
     }
 
     document.addEventListener("DOMContentLoaded", function () {
       const editButtons = document.querySelectorAll('.edit-icon-button');
-
       editButtons.forEach((button) => {
         button.addEventListener('click', () => {
           const type = button.dataset.type;
           const tabIndex = parseInt(button.dataset.tab);
-
           if (type === 'add') {
             openAddModal(tabIndex);
           }
         });
       });
+
+      // 初期のタイムラインもソート
+      document.querySelectorAll('.timeline').forEach(timeline => sortTimelineEntries(timeline));
     });
 
-    // 共有モーダルの開閉処理
     document.getElementById('shareButton').addEventListener('click', function () {
       document.getElementById('shareModal').style.display = 'block';
     });
@@ -384,12 +397,10 @@
         alert("メールアドレスを入力してください");
         return;
       }
-
-      // 本来はここでメール送信のAPI呼び出しなどを行う
       alert(`${email} にしおりを共有しました！`);
       closeShareModal();
     }
-
   </script>
 </body>
 </html>
+
