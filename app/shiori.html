@@ -211,62 +211,8 @@
     </div>
   </div>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab(0)">1日目</div>
-    <div class="tab" onclick="switchTab(1)">2日目</div>
-    <div class="tab" onclick="switchTab(2)">3日目</div>
-
-    <button id="shareButton" class="share-icon-button", >
-    <img src="共有画面.png" alt="共有" width="30" height="30">
-    </button>
-  </div>
-
-  <!-- ▼ 1日目 -->
-  <div class="tab-content active">
-    <!-- ▼ 共有ボタン -->
-
-    <div class="shiori-box">
-
-      <!-- 1日目の shiori-box の中 -->
-      <button class="edit-icon-button" data-type="add" data-tab="0" aria-label="予定追加">
-        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
-      </button>
-      <!-- 各ボタン -->
-      <!-- <button id="shareButton" class="share-icon-button">
-        <img src="共有画面.png" alt="共有" width="30" height="30">
-      </button> -->
-
-      <div class="timeline">
-        <!-- 予定が入るためのリストみたいな -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ▼ 2日目 -->
-  <div class="tab-content">
-    <div class="shiori-box">
-      <!-- 2日目の shiori-box の中 -->
-      <button class="edit-icon-button" data-type="add" data-tab="1" aria-label="予定追加">
-        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
-      </button>
-      <div class="timeline">
-        <!-- 予定が入るためのリストみたいな -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ▼ 3日目 -->
-  <div class="tab-content">
-    <div class="shiori-box">
-      <!-- 3日目の shiori-box の中 -->
-      <button class="edit-icon-button" data-type="add" data-tab="2" aria-label="予定追加">
-        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
-      </button>
-      <div class="timeline">
-        <!-- 予定が入るためのリストみたいな -->
-      </div>
-    </div>
-  </div>
+  <div class="tabs" id="tabsContainer"></div>
+  <div id="tabContentsContainer"></div>
 
   <!-- ▼ メモ入力モーダル -->
   <div id="memoModal">
@@ -336,16 +282,22 @@
         return;
       }
 
-      const tabContents = document.querySelectorAll('.tab-content');
-      const targetTimeline = tabContents[currentTabIndex].querySelector('.timeline');
+      const entry = {
+        time,
+        desc,
+        note: '',
+        tabIndex: currentTabIndex
+      };
 
-      const newEntry = document.createElement('div');
-      newEntry.className = 'timeline-entry';
-      newEntry.setAttribute('data-time', time);
-      newEntry.innerHTML = `${time} <span class="entry-label" onclick="handleClick(this)" data-note="">${desc}</span>`;
-      targetTimeline.appendChild(newEntry);
+      // 保存
+      const savedKey = getSavedKey();  // 日付+場所に基づいたキー
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      schedules.push(entry);
+      localStorage.setItem(savedKey, JSON.stringify(schedules));
 
-      sortTimelineEntries(targetTimeline);
+      // 表示
+      renderSchedule(entry);
+
       closeAddModal();
     }
 
@@ -366,17 +318,57 @@
 
       if (date && place) {
         document.querySelector('.trip-title').textContent = `${date} in ${place}`;
-      }
-      // 初期のタイムラインもソート
-      // イベントバインド（DOMContentLoaded 内）
-      document.querySelectorAll('.edit-icon-button').forEach(button => {
-        button.addEventListener('click', () => {
-          const type = button.dataset.type;
-          const tabIndex = parseInt(button.dataset.tab);
-          if (type === 'add') {
-            openAddModal(tabIndex);
+
+        // 例: "2025.9.3-7" を取得
+        const match = date.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const [, year, month, start, end] = match.map(Number);
+          const dayCount = end - start + 1;
+          const tabsContainer = document.getElementById("tabsContainer");
+          const tabContents = document.getElementById("tabContentsContainer");
+
+          for (let i = 0; i < dayCount; i++) {
+            // タブ作成
+            const tab = document.createElement("div");
+            tab.className = "tab" + (i === 0 ? " active" : "");
+            tab.textContent = `${i + 1}日目`;
+            tab.onclick = () => switchTab(i);
+            tabsContainer.appendChild(tab);
+
+            // コンテンツ作成
+            const content = document.createElement("div");
+            content.className = "tab-content" + (i === 0 ? " active" : "");
+            content.innerHTML = `
+              <div class="shiori-box">
+                <button class="edit-icon-button" data-type="add" data-tab="${i}" aria-label="予定追加">
+                  <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+                </button>
+                <div class="timeline"></div>
+              </div>
+            `;
+            tabContents.appendChild(content);
           }
-        });
+
+          // 編集ボタンのイベントを再設定
+          document.querySelectorAll('.edit-icon-button').forEach(button => {
+            button.addEventListener('click', () => {
+              const type = button.dataset.type;
+              const tabIndex = parseInt(button.dataset.tab);
+              if (type === 'add') {
+                openAddModal(tabIndex);
+              }
+            });
+          });
+        }
+      }
+
+      const savedKey = getSavedKey();
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      schedules.forEach(renderSchedule);
+
+      // 共有ボタン
+      document.getElementById('shareButton').addEventListener('click', function () {
+        document.getElementById('shareModal').style.display = 'block';
       });
     });
 
@@ -398,6 +390,51 @@
       alert(`${email} にしおりを共有しました！`);
       closeShareModal();
     }
+
+    function getSavedKey() {
+      const params = new URLSearchParams(window.location.search);
+      const date = params.get("date");
+      const place = params.get("place");
+      return `schedules_${date}_${place}`;
+    }
+    
+    function saveMemo() {
+      const note = document.getElementById('memoTextarea').value;
+      currentLabel.dataset.note = note;
+
+      // 保存先を更新
+      const savedKey = getSavedKey();
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+
+      // 時間と内容が一致するものを更新
+      const parent = currentLabel.closest('.timeline-entry');
+      const time = parent.getAttribute('data-time');
+      const desc = currentLabel.textContent;
+
+      for (let entry of schedules) {
+        if (entry.time === time && entry.desc === desc) {
+          entry.note = note;
+          break;
+        }
+      }
+      localStorage.setItem(savedKey, JSON.stringify(schedules));
+
+      closeMemo();
+    }
+
+    function renderSchedule(entry) {
+      const tabContents = document.querySelectorAll('.tab-content');
+      const targetTimeline = tabContents[entry.tabIndex].querySelector('.timeline');
+
+      const newEntry = document.createElement('div');
+      newEntry.className = 'timeline-entry';
+      newEntry.setAttribute('data-time', entry.time);
+      newEntry.innerHTML = `${entry.time} <span class="entry-label" onclick="handleClick(this)" data-note="${entry.note || ''}">${entry.desc}</span>`;
+      targetTimeline.appendChild(newEntry);
+
+      sortTimelineEntries(targetTimeline);
+    }
+
   </script>
 </body>
 </html>
