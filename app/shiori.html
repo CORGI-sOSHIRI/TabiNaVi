@@ -1,3 +1,4 @@
+<!-- 修正後の完全なコード -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,43 +6,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>しおり詳細</title>
   <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
-
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Zen Maru Gothic', 'Kiwi Maru', sans-serif;
       margin: 0;
       padding: 10px;
       max-width: 480px;
       margin: auto;
       background-color: #fff;
     }
-
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
     .logo {
       height: 100px;
     }
-
     .trip-title {
-      font-family: 'Zen Maru Gothic', 'Kiwi Maru', sans-serif;
       font-size: 25px;
       padding: 10px 3px;
-
-      border: none;
-      border-bottom: 2px solid #333;  /* 下線を追加 */
+      border-bottom: 2px solid #333;
     }
-
     .tabs {
       display: flex;
       justify-content: center;
       margin-top: 10px;
       gap: 5px;
     }
-
     .tab {
       padding: 5px 10px;
       border: 2px solid #000;
@@ -51,60 +43,44 @@
       font-weight: bold;
       cursor: pointer;
     }
-
-    .tab.active {
-      background-color: white;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
+    .tab.active { background-color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
     .shiori-box {
-      background-color: #f0f0f0;
+      position: relative;
+      background-color: #ffffff;
+      border: 2px solid #000;
       border-radius: 10px;
       padding: 10px;
       margin-bottom: 20px;
-      position: relative;
       min-height: 400px;
-      border: none;
     }
-
-    .tab-content.active .shiori-box {
-      background-color: #ffffff;
-      border: 2px solid #000000;
-    }
-
     .edit-icon-button {
       position: absolute;
-      top: 5px;
+      top: 10px;
       right: 10px;
       padding: 0;
       background: #c5c3bf;
       cursor: pointer;
-      border-radius: 10px;  /* ← 丸くする！ */
+      border-radius: 10px;
       width: 40px;
       height: 40px;
       z-index: 10;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-
     .timeline {
-      position: relative;
       margin-left: 20px;
       border-left: 2px solid black;
       padding-left: 15px;
     }
-
     .timeline-entry {
       position: relative;
       margin-bottom: 20px;
     }
-
     .timeline-entry::before {
       content: '';
       position: absolute;
@@ -113,15 +89,13 @@
       width: 10px;
       height: 10px;
       background-color: #003344;
-      border-radius: 10px;
+      border-radius: 50%;
     }
-
     .entry-label {
       color: #003344;
       text-decoration: underline;
       cursor: pointer;
     }
-
     .back-button {
       display: block;
       margin: 0 auto;
@@ -132,7 +106,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-
     .modal {
       display: none;
       position: fixed;
@@ -141,7 +114,6 @@
       background: rgba(0, 0, 0, 0.3);
       z-index: 50;
     }
-
     .modal-content {
       background: #fff;
       border-radius: 10px;
@@ -151,64 +123,31 @@
       margin: 15% auto;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
-
-    .share_button{
+    .share_button {
       border: 2px solid #0f1618;
       border-radius: 10px;
       width: 40px;
       height: 40px;
       cursor: pointer;
-      right: 10px;
-      top: 10px;
     }
-
-
-    #memoModal {
-      display: none;
-      position: fixed;
-      top: 30%;
-      left: 10%;
-      width: 80%;
-      background: #fff;
-      border: 2px solid #003344;
-      border-radius: 10px;
-      padding: 15px;
-      z-index: 10;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    #memoModal textarea {
+    #addModal textarea {
       width: 100%;
-      padding: 5px;
       margin-top: 5px;
-      margin-bottom: 10px;
     }
-
-    #memoModal button {
-      margin-right: 60px;
-    }
-
-    #addModal {
-      width: 100%;
-      max-width: 480px;  /* ← .shiori-box と同じに！ */
-    }
-
-
   </style>
 </head>
 <body>
   <div class="header">
     <img src="logo_たびなび.png" class="logo" alt="ロゴ">
     <div class="trip-title"></div>
-    <img src="share_logo.png" class="share_button" id="shareButton" alt="共有" >
+    <img src="share_logo.png" class="share_button" id="shareButton" alt="共有">
   </div>
 
-  <!-- ▼ 共有モーダル -->
   <div id="shareModal" class="modal">
     <div class="modal-content">
       <h3>しおりを共有</h3>
       <label>メールアドレス：</label><br>
-      <input type="email" id="shareEmail" placeholder="example@example.com" required><br><br>
+      <input type="email" id="shareEmail" placeholder="example@example.com"><br><br>
       <button onclick="sendShare()">送信</button>
       <button onclick="closeShareModal()">キャンセル</button>
     </div>
@@ -217,22 +156,15 @@
   <div class="tabs" id="tabsContainer"></div>
   <div id="tabContentsContainer"></div>
 
-  <!-- ▼ メモ入力モーダル -->
-  <div id="memoModal">
-    <h3>メモを編集</h3>
-    <textarea id="memoTextarea" rows="4" placeholder="メモを書いてね！"></textarea><br>
-    <button onclick="saveMemo()">保存</button>
-    <button onclick="closeMemo()">キャンセル</button>
-  </div>
-
-  <!-- ▼ 予定追加モーダル -->
-  <div id="addModal" class="modal" style="display:none;">
+  <div id="addModal" class="modal">
     <div class="modal-content">
       <h3>予定を<span id="addModalMode">追加</span></h3>
       <label>時間：<input type="time" id="timeInput"></label><br>
-      <label>目的地：<input type="text" id="descInput" placeholder="例：カフェ"></label><br>
+      <label>目的地：<input type="text" id="descInput"></label><br>
+      <label>メモ：<textarea id="noteInput" rows="2"></textarea></label><br>
       <button onclick="saveSchedule()">保存</button>
       <button onclick="closeAddModal()">キャンセル</button>
+      <button id="deleteButton" onclick="deleteSchedule()" style="display:none; color:red;">削除</button>
     </div>
   </div>
 
@@ -240,31 +172,12 @@
   <button class="back-button" onclick="history.back();">たび一覧に戻る</button>
 
   <script>
-    let currentLabel = null;
     let currentTabIndex = 0;
-    let editingEntry = null; // 編集対象
+    let editingEntry = null;
 
     function switchTab(index) {
-      const tabs = document.querySelectorAll('.tab');
-      const contents = document.querySelectorAll('.tab-content');
-      tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
-      contents.forEach((content, i) => content.classList.toggle('active', i === index));
-    }
-
-    function handleClick(labelSpan) {
-      currentLabel = labelSpan;
-      document.getElementById('memoTextarea').value = labelSpan.dataset.note || '';
-      document.getElementById('memoModal').style.display = 'block';
-    }
-
-    function saveMemo() {
-      const note = document.getElementById('memoTextarea').value;
-      currentLabel.dataset.note = note;
-      closeMemo();
-    }
-
-    function closeMemo() {
-      document.getElementById('memoModal').style.display = 'none';
+      document.querySelectorAll('.tab').forEach((tab, i) => tab.classList.toggle('active', i === index));
+      document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === index));
     }
 
     function openAddModal(index, entry = null) {
@@ -272,55 +185,78 @@
       document.getElementById('addModal').style.display = 'block';
       const timeInput = document.getElementById('timeInput');
       const descInput = document.getElementById('descInput');
+      const noteInput = document.getElementById('noteInput');
       const modeLabel = document.getElementById('addModalMode');
+      const deleteButton = document.getElementById('deleteButton');
 
       if (entry) {
         editingEntry = entry;
         timeInput.value = entry.getAttribute('data-time');
         descInput.value = entry.querySelector('.entry-label').textContent;
+        noteInput.value = entry.querySelector('.entry-label').dataset.note || '';
         modeLabel.textContent = '編集';
+        deleteButton.style.display = 'inline-block'; // 表示
       } else {
         editingEntry = null;
         timeInput.value = '';
         descInput.value = '';
+        noteInput.value = '';
         modeLabel.textContent = '追加';
+        deleteButton.style.display = 'none'; // 非表示
       }
+    }
+
+    function deleteSchedule() {
+      if (!editingEntry) return;
+
+      if (!confirm("この予定を削除しますか？")) return;
+
+      const savedKey = getSavedKey();
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+
+      const time = editingEntry.getAttribute('data-time');
+      const desc = editingEntry.querySelector('.entry-label').textContent;
+
+      const updated = schedules.filter(entry => !(entry.time === time && entry.desc === desc && entry.tabIndex === currentTabIndex));
+      localStorage.setItem(savedKey, JSON.stringify(updated));
+
+      editingEntry.remove(); // DOMから削除
+      editingEntry = null;
+      closeAddModal();
     }
 
     function saveSchedule() {
       const time = document.getElementById('timeInput').value;
       const desc = document.getElementById('descInput').value;
-      if (!time || !desc) {
-        alert("時間と内容を入力してください");
-        return;
-      }
-
+      const note = document.getElementById('noteInput').value;
       const savedKey = getSavedKey();
       const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
 
+      if (!time || !desc) {
+        alert("時間と目的地を入力してください");
+        return;
+      }
+
       if (editingEntry) {
-        // localStorageから更新対象を探す
         const oldTime = editingEntry.getAttribute('data-time');
         const oldDesc = editingEntry.querySelector('.entry-label').textContent;
         for (let entry of schedules) {
           if (entry.time === oldTime && entry.desc === oldDesc && entry.tabIndex === currentTabIndex) {
             entry.time = time;
             entry.desc = desc;
+            entry.note = note;
             break;
           }
         }
         localStorage.setItem(savedKey, JSON.stringify(schedules));
-
-        // DOM更新
         editingEntry.setAttribute('data-time', time);
-        editingEntry.innerHTML = `${time} <span class="entry-label" onclick="handleClick(this)" data-note="">${desc}</span>
-          <button onclick="editSchedule(this)">編集</button>`;
+        editingEntry.innerHTML = `${time} <span class="entry-label" data-note="${note}" onclick="openAddModal(${currentTabIndex}, this.parentElement)">${desc}</span>`;
         editingEntry = null;
       } else {
-        const entry = { time, desc, note: '', tabIndex: currentTabIndex };
-        schedules.push(entry);
+        const newEntry = { time, desc, note, tabIndex: currentTabIndex };
+        schedules.push(newEntry);
         localStorage.setItem(savedKey, JSON.stringify(schedules));
-        renderSchedule(entry);
+        renderSchedule(newEntry);
       }
 
       closeAddModal();
@@ -328,177 +264,76 @@
 
     function closeAddModal() {
       document.getElementById('addModal').style.display = 'none';
-      document.getElementById('timeInput').value = '';
-      document.getElementById('descInput').value = '';
     }
 
-    function addSchedule() {
-      const time = document.getElementById('timeInput').value;
-      const desc = document.getElementById('descInput').value;
-      if (!time || !desc) {
-        alert("時間と内容を入力してください");
-        return;
-      }
+    function getSavedKey() {
+      const params = new URLSearchParams(window.location.search);
+      return `schedules_${params.get("date")}_${params.get("place")}`;
+    }
 
-      const entry = {
-        time,
-        desc,
-        note: '',
-        tabIndex: currentTabIndex
-      };
-
-      // 保存
-      const savedKey = getSavedKey();  // 日付+場所に基づいたキー
-      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
-      schedules.push(entry);
-      localStorage.setItem(savedKey, JSON.stringify(schedules));
-
-      // 表示
-      renderSchedule(entry);
-
-      closeAddModal();
+    function renderSchedule(entry) {
+      const timeline = document.querySelectorAll('.tab-content')[entry.tabIndex].querySelector('.timeline');
+      const newEntry = document.createElement('div');
+      newEntry.className = 'timeline-entry';
+      newEntry.setAttribute('data-time', entry.time);
+      newEntry.innerHTML = `${entry.time} <span class="entry-label" data-note="${entry.note || ''}" onclick="openAddModal(${entry.tabIndex}, this.parentElement)">${entry.desc}</span>`;
+      timeline.appendChild(newEntry);
+      sortTimelineEntries(timeline);
     }
 
     function sortTimelineEntries(timeline) {
       const entries = Array.from(timeline.querySelectorAll('.timeline-entry'));
-      entries.sort((a, b) => {
-        const timeA = a.getAttribute('data-time') || a.textContent.trim().slice(0, 5);
-        const timeB = b.getAttribute('data-time') || b.textContent.trim().slice(0, 5);
-        return timeA.localeCompare(timeB);
-      });
-      entries.forEach(entry => timeline.appendChild(entry));
+      entries.sort((a, b) => a.getAttribute('data-time').localeCompare(b.getAttribute('data-time')));
+      entries.forEach(e => timeline.appendChild(e));
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const params = new URLSearchParams(window.location.search);
-      const date = params.get("date");
-      const place = params.get("place");
-
-      if (date && place) {
-        document.querySelector('.trip-title').textContent = `${date} in ${place}`;
-
-        // 例: "2025.9.3-7" を取得
-        const match = date.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
-        if (match) {
-          const [, year, month, start, end] = match.map(Number);
-          const dayCount = end - start + 1;
-          const tabsContainer = document.getElementById("tabsContainer");
-          const tabContents = document.getElementById("tabContentsContainer");
-
-          for (let i = 0; i < dayCount; i++) {
-            // タブ作成
-            const tab = document.createElement("div");
-            tab.className = "tab" + (i === 0 ? " active" : "");
-            tab.textContent = `${i + 1}日目`;
-            tab.onclick = () => switchTab(i);
-            tabsContainer.appendChild(tab);
-
-            // コンテンツ作成
-            const content = document.createElement("div");
-            content.className = "tab-content" + (i === 0 ? " active" : "");
-            content.innerHTML = `
-              <div class="shiori-box">
-                <button class="edit-icon-button" data-type="add" data-tab="${i}" aria-label="予定追加">
-                  <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
-                </button>
-                <div class="timeline"></div>
-              </div>
-            `;
-            tabContents.appendChild(content);
-          }
-
-          // 編集ボタンのイベントを再設定
-          document.querySelectorAll('.edit-icon-button').forEach(button => {
-            button.addEventListener('click', () => {
-              const type = button.dataset.type;
-              const tabIndex = parseInt(button.dataset.tab);
-              if (type === 'add') {
-                openAddModal(tabIndex);
-              }
-            });
-          });
-        }
-      }
-
-      const savedKey = getSavedKey();
-      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
-      schedules.forEach(renderSchedule);
-
-      // 共有ボタン
-
-    });
-
-    document.getElementById('shareButton').addEventListener('click', function () {
-      document.getElementById('shareModal').style.display = 'block';
-    });
-
+    function sendShare() {
+      const email = document.getElementById('shareEmail').value;
+      if (!email) return alert("メールアドレスを入力してください");
+      alert(`${email} にしおりを共有しました！`);
+      closeShareModal();
+    }
     function closeShareModal() {
       document.getElementById('shareModal').style.display = 'none';
       document.getElementById('shareEmail').value = '';
     }
 
-    function sendShare() {
-      const email = document.getElementById('shareEmail').value;
-      if (!email) {
-        alert("メールアドレスを入力してください");
-        return;
-      }
-      alert(`${email} にしおりを共有しました！`);
-      closeShareModal();
-    }
+    document.getElementById('shareButton').addEventListener('click', () => {
+      document.getElementById('shareModal').style.display = 'block';
+    });
 
-    function getSavedKey() {
-      const params = new URLSearchParams(window.location.search);
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(location.search);
       const date = params.get("date");
       const place = params.get("place");
-      return `schedules_${date}_${place}`;
-    }
-    
-    function saveMemo() {
-      const note = document.getElementById('memoTextarea').value;
-      currentLabel.dataset.note = note;
+      document.querySelector('.trip-title').textContent = `${date} in ${place}`;
 
-      // 保存先を更新
-      const savedKey = getSavedKey();
-      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      const match = date.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
+      if (match) {
+        const [, , , start, end] = match.map(Number);
+        const dayCount = end - start + 1;
+        for (let i = 0; i < dayCount; i++) {
+          const tab = document.createElement("div");
+          tab.className = "tab" + (i === 0 ? " active" : "");
+          tab.textContent = `${i + 1}日目`;
+          tab.onclick = () => switchTab(i);
+          tabsContainer.appendChild(tab);
 
-      // 時間と内容が一致するものを更新
-      const parent = currentLabel.closest('.timeline-entry');
-      const time = parent.getAttribute('data-time');
-      const desc = currentLabel.textContent;
-
-      for (let entry of schedules) {
-        if (entry.time === time && entry.desc === desc) {
-          entry.note = note;
-          break;
+          const content = document.createElement("div");
+          content.className = "tab-content" + (i === 0 ? " active" : "");
+          content.innerHTML = `<div class="shiori-box">
+            <button class="edit-icon-button" data-tab="${i}" onclick="openAddModal(${i})">
+              <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+            </button>
+            <div class="timeline"></div>
+          </div>`;
+          tabContentsContainer.appendChild(content);
         }
       }
-      localStorage.setItem(savedKey, JSON.stringify(schedules));
 
-      closeMemo();
-    }
-
-    function renderSchedule(entry) {
-      const tabContents = document.querySelectorAll('.tab-content');
-      const targetTimeline = tabContents[entry.tabIndex].querySelector('.timeline');
-
-      const newEntry = document.createElement('div');
-      newEntry.className = 'timeline-entry';
-      newEntry.setAttribute('data-time', entry.time);
-      newEntry.innerHTML = `${entry.time} <span class="entry-label" onclick="handleClick(this)" data-note="${entry.note || ''}">${entry.desc}</span>
-        <button onclick="editSchedule(this)">編集</button>`;
-
-      targetTimeline.appendChild(newEntry);
-      sortTimelineEntries(targetTimeline);
-    }
-
-    function editSchedule(button) {
-      const entry = button.closest('.timeline-entry');
-      const tab = entry.closest('.tab-content');
-      const tabIndex = Array.from(document.querySelectorAll('.tab-content')).indexOf(tab);
-      openAddModal(tabIndex, entry);
-    }
+      const schedules = JSON.parse(localStorage.getItem(getSavedKey()) || "[]");
+      schedules.forEach(renderSchedule);
+    });
   </script>
 </body>
 </html>
-
