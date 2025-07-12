@@ -21,11 +21,11 @@
     }
 
     .logo {
-      height: 60px;
+      height: 100px;
     }
 
     .trip-title {
-      font-size: 24px;
+      font-size: 30px;
       border: 2px solid #0f1618;
       padding: 10px 20px;
       border-radius: 10px;
@@ -75,14 +75,19 @@
       border: 2px solid #000000;
     }
 
-    .edit-icon {
+    .edit-icon-button {
       position: absolute;
-      top: 10px;
+      top: 5px;
       right: 10px;
-      width: 24px;
-      height: 24px;
+      background: none;
+      border: none;
+      padding: 0;
       cursor: pointer;
+      width: 40px;
+      height: 40px;
+      z-index: 10;
     }
+
 
     .timeline {
       position: relative;
@@ -165,7 +170,13 @@
   <!-- ▼ 1日目 -->
   <div class="tab-content active">
     <div class="shiori-box">
-      <img src="編集ボタン.png" class="edit-icon" alt="編集">
+
+      <!-- 1日目の shiori-box の中 -->
+      <button class="edit-icon-button" data-type="add" data-tab="0" aria-label="予定追加">
+        <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+      </button>
+        <!-- <img src="編集ボタン.png" class="edit-icon" alt="予定追加"> -->
+      </button>
       <div class="timeline">
         <div class="timeline-entry">10:00 <span class="entry-label" onclick="handleClick(this)" data-note="">空港到着</span></div>
         <div class="timeline-entry">12:00 <span class="entry-label" onclick="handleClick(this)" data-note="">ジンギスカンランチ</span></div>
@@ -206,10 +217,22 @@
     <button onclick="closeMemo()">キャンセル</button>
   </div>
 
+  <!-- ▼ 予定追加モーダル -->
+  <div id="addModal" style="display:none; position:fixed; top:30%; left:10%; width:80%; background:#fff; border:2px solid #003344; border-radius:10px; padding:15px; z-index:20;">
+    <h3>予定を追加</h3>
+    <label>時間：<input type="time" id="timeInput"></label><br>
+    <label>内容：<input type="text" id="descInput" placeholder="例：カフェで休憩"></label><br>
+    <button onclick="addSchedule()">追加</button>
+    <button onclick="closeAddModal()">キャンセル</button>
+  </div>
+
+
   <button class="back-button" onclick="history.back();">たび一覧に戻る</button>
 
   <script>
     let currentLabel = null;
+    let currentTabIndex = 0; // ←追加
+
 
     function switchTab(index) {
       const tabs = document.querySelectorAll('.tab');
@@ -234,14 +257,49 @@
       document.getElementById('memoModal').style.display = 'none';
     }
 
+    function openAddModal(index) {
+      currentTabIndex = index;
+      document.getElementById('addModal').style.display = 'block';
+    }
+    function closeAddModal() {
+      document.getElementById('addModal').style.display = 'none';
+      document.getElementById('timeInput').value = '';
+      document.getElementById('descInput').value = '';
+    }
+    function addSchedule() {
+      const time = document.getElementById('timeInput').value;
+      const desc = document.getElementById('descInput').value;
+      if (!time || !desc) {
+        alert("時間と内容を入力してください");
+        return;
+      }
+
+      const tabContents = document.querySelectorAll('.tab-content');
+      const targetTimeline = tabContents[currentTabIndex].querySelector('.timeline');
+
+      const newEntry = document.createElement('div');
+      newEntry.className = 'timeline-entry';
+      newEntry.innerHTML = `${time} <span class="entry-label" onclick="handleClick(this)" data-note="">${desc}</span>`;
+      targetTimeline.appendChild(newEntry);
+
+      closeAddModal();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
-      const editButtons = document.querySelectorAll('.edit-icon');
-      editButtons.forEach(button => {
+      const editButtons = document.querySelectorAll('.edit-icon-button');
+
+      editButtons.forEach((button) => {
         button.addEventListener('click', () => {
-          alert("編集機能はこれから追加されます！");
+          const type = button.dataset.type;
+          const tabIndex = parseInt(button.dataset.tab);
+
+          if (type === 'add') {
+            openAddModal(tabIndex);
+          }
         });
       });
     });
+
   </script>
 </body>
 </html>
