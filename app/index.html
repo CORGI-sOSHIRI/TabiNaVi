@@ -285,20 +285,41 @@
       const password = document.querySelector('#newPass').value;
       const username = document.querySelector('#username').value;
 
+      // 1. Supabase Auth に登録
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { username: username }
-        }
       });
 
       if (error) {
         alert('登録失敗: ' + error.message);
-      } else {
-        alert('確認メールを送信しました！');
-        closePopup('signupPopup');
+        return;
       }
+
+      const userId = data.user?.id;
+
+      if (!userId) {
+        alert("ユーザーIDの取得に失敗しました");
+        return;
+      }
+
+      // 2. users テーブルに username を保存
+      const { error: insertError } = await supabase.from('users').insert([
+        {
+          id: userId,       // Auth の UUID をそのまま使う
+          email: email,
+          password: password,  // ※暗号化してないので注意（本番では使わないで！）
+          username: username
+        }
+      ]);
+
+      if (insertError) {
+        alert("usersテーブルへの保存失敗: " + insertError.message);
+        return;
+      }
+
+      alert('登録成功！確認メールを送信しました');
+      closePopup('signupPopup');
     });
 
     document.querySelector("form").addEventListener("submit", async function (e) {
