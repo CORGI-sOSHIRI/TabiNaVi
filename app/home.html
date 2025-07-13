@@ -187,8 +187,14 @@
 
   <button class="back-button" onclick="history.back();">ホームに戻る</button>
   <button class="back-button" onclick="deleteSelectedTrips()">選択したしおりを削除</button>
-
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
+    const SUPABASE_URL = 'https://ebyxjgdbarcxzyerhiqm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVieXhqZ2RiYXJjeHp5ZXJoaXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMTcxMDksImV4cCI6MjA2Nzg5MzEwOX0.LXL7sCS7hEBYUDNZFpiJnDbsmZ7FpKbeNfMd2tLr08w';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     function openModal() {
       const modal = document.getElementById('modal');
       modal.style.display = 'flex';  // ← block → flex に変更
@@ -237,34 +243,37 @@
       wrapper.appendChild(button);
       tripList.insertBefore(wrapper, tripList.firstChild);
     }
-    function addTrip() {
-      const startDateStr = document.getElementById('startDateInput').value;
-      const endDateStr = document.getElementById('endDateInput').value;
-      const place = document.getElementById('placeInput').value.trim();
+    async function addTrip() {
+      const startDate = document.getElementById('startDateInput').value;
+      const endDate = document.getElementById('endDateInput').value;
+      const title = document.getElementById('placeInput').value.trim();
 
-      if (!startDateStr || !endDateStr || !place) {
-        alert("開始日・終了日・場所をすべて入力してください");
+      if (!startDate || !endDate || !title) {
+        alert("すべて入力してください");
         return;
       }
 
-      const startDate = new Date(startDateStr);
-      const year = startDate.getFullYear();
-      const month = (startDate.getMonth() + 1).toString().padStart(2, '0');
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user.id;
 
-      const label = `${year}.${month} in ${place}`;
-      const params = `${year}.${month}.${startDate.getDate()}-${new Date(endDateStr).getDate()}`;
+      const { error } = await supabase.from('trip_schedules').insert([
+        {
+          user_id: userId,
+          start_date: startDate,
+          end_date: endDate,
+          title: title
+        }
+      ]);
 
-      // ボタン生成
-      renderTripButton(label, place, params);
+      if (error) {
+        alert("追加に失敗しました: " + error.message);
+        return;
+      }
 
-      // 保存
-      const trips = loadTripsFromStorage();
-      trips.unshift({ label, place, params });
-      saveTripsToStorage(trips);
-
-      closeModal();
-      updateCurrentTrip();
+      alert("追加に成功しました！");
+      location.reload();  // 再読込して最新データを表示
     }
+
 
 
     function updateCurrentTrip() {
@@ -297,13 +306,43 @@
         currentTripArea.innerHTML = '<p>今月の旅行はまだありません。</p>';
       }
     }
-    document.addEventListener("DOMContentLoaded", () => {
-      const savedTrips = loadTripsFromStorage();
-      savedTrips.forEach(({ label, place, params }) => {
-        renderTripButton(label, place, params);
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        alert("ログイン情報がありません。ログインしてください。");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const userId = user.id;
+
+      // trip_schedules テーブルから自分のデータだけ取得
+      const { data: trips, error: tripError } = await supabase
+        .from("trip_schedules")
+        .select("*")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false });
+
+      if (tripError) {
+        console.error("取得エラー:", tripError.message);
+        return;
+      }
+
+      // 表示
+      trips.forEach(({ start_date, end_date, title }) => {
+        const start = new Date(start_date);
+        const year = start.getFullYear();
+        const month = (start.getMonth() + 1).toString().padStart(2, '0');
+        const params = `${year}.${month}.${start.getDate()}-${new Date(end_date).getDate()}`;
+        const label = `${year}.${month} in ${title}`;
+
+        renderTripButton(label, title, params);
       });
+
       updateCurrentTrip();
     });
+
     function deleteSelectedTrips() {
       const checkboxes = document.querySelectorAll('.trip-checkbox');
       const trips = loadTripsFromStorage();
