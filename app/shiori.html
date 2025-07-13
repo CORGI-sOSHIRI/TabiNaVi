@@ -207,13 +207,117 @@
     </div>
   </div>
 
+  <!-- 地図表示ボタン -->
+  <button class="back-button" onclick="openMapModal()">地図で見る</button>
+
+  <!-- 地図モーダル -->
+  <div id="mapModal" class="modal">
+    <div class="modal-content" style="width: 90%; height: 80%;">
+      <h3>予定マップ</h3>
+      <div id="map" style="width:100%; height:300px;"></div>
+      <button onclick="closeMapModal()">閉じる</button>
+    </div>
+  </div>
+
+
 
   <button class="back-button" onclick="history.back();">たび一覧に戻る</button>
 
+  <!-- Google Maps JavaScript API を読み込む（headの最後に追加）-->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvPeUOz2JUCE9eZOK-S5bPY4rGTY6cvXU&callback=initMap"></script>
   <script>
+    const GOOGLE_MAPS_API_KEY = "AIzaSyBvPeUOz2JUCE9eZOK-S5bPY4rGTY6cvXU"; // ← あなたのキーに置換
+
     let currentTabIndex = 0;
     let editingEntry = null;
 
+    async function geocodePlace(placeName) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(placeName)}&key=${GOOGLE_MAPS_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.status === 'OK') {
+        return data.results[0].geometry.location; // { lat, lng }
+      } else {
+        throw new Error(`場所が見つかりませんでした: ${placeName}`);
+      }
+    }
+
+    async function getTravelTimeInSeconds(origin, destination) {
+      const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&mode=walking&language=ja&key=${GOOGLE_MAPS_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.status === "OK") {
+        return data.rows[0].elements[0].duration.value; // 秒
+      } else {
+        throw new Error("移動時間の取得に失敗しました");
+      }
+    }
+
+    async function checkScheduleFeasibility(schedules) {
+      for (let i = 0; i < schedules.length - 1; i++) {
+        const a = schedules[i];
+        const b = schedules[i + 1];
+        if (a.tabIndex !== b.tabIndex) continue;
+
+        try {
+          const travelSec = await getTravelTimeInSeconds(a.desc, b.desc);
+          const timeA = new Date(`2025-01-01T${a.time}`);
+          const timeB = new Date(`2025-01-01T${b.time}`);
+          const gapSec = (timeB - timeA) / 1000;
+
+          if (travelSec > gapSec) {
+            alert(`「${a.desc}」から「${b.desc}」への移動に${Math.ceil(travelSec / 60)}分かかりますが、${Math.ceil(gapSec / 60)}分しか空いていません！`);
+          }
+        } catch (err) {
+          console.warn("移動チェック失敗:", err.message);
+        }
+      }
+    }
+    function openMapModal() {
+      document.getElementById('mapModal').style.display = 'block';
+      initMap(); // モーダル開いたら地図初期化
+    }
+
+    function closeMapModal() {
+      document.getElementById('mapModal').style.display = 'none';
+    }
+
+    async function initMap() {
+      const savedKey = getSavedKey();
+      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+
+      // 中心は最初の目的地（なければ東京）
+      let center = { lat: 35.6895, lng: 139.6917 }; // 東京
+      if (schedules.length > 0) {
+        try {
+          center = await geocodePlace(schedules[0].desc);
+        } catch {}
+      }
+
+      const map = new google.maps.Map(document.getElementById('map'), {
+        center,
+        zoom: 13
+      });
+      for (let i = 0; i < schedules.length; i++) {
+        const entry = schedules[i];
+        try {
+          const location = await geocodePlace(entry.desc);
+          new google.maps.Marker({
+            position: location,
+            map,
+            label: {
+              text: `${i + 1}`,  // ← 番号ラベル
+              color: 'white',
+              fontWeight: 'bold'
+            },
+            title: `${entry.time} ${entry.desc}`
+          });
+        } catch (err) {
+          console.warn(`${entry.desc} の場所が見つかりませんでした`);
+        }
+      }
+
+    }
     function switchTab(index) {
       document.querySelectorAll('.tab').forEach((tab, i) => tab.classList.toggle('active', i === index));
       document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === index));
@@ -372,6 +476,8 @@
 
       const schedules = JSON.parse(localStorage.getItem(getSavedKey()) || "[]");
       schedules.forEach(renderSchedule);
+      checkScheduleFeasibility(schedules); // ← ここ追加！
+
     });
   </script>
 </body>
