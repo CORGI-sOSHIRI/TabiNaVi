@@ -19,6 +19,7 @@
   <link rel="shortcut icon" href="logo.png" type="image/png">
   <style>
     body {
+      position: relative;
       font-family: sans-serif;
       background-color: white;
       margin: 0;
@@ -60,7 +61,7 @@
     }
 
     .section {
-      background-color: #f0f0f0;
+      background-color: #ffbd2f;
       border-radius: 20px;
       padding: 15px;
       margin-bottom: 20px;
@@ -94,6 +95,44 @@
     .trip-checkbox {
       margin-right: 10px;
     }
+
+    .ear, .tail, .foot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* 👂耳 左右 */
+    .ear.left {
+      transform: translate(-170px, -230px); /* 中心より左上 */
+      width: 70px;
+    }
+
+    .ear.right {
+      transform: translate(100px, -230px);  /* 中心より右上 */
+      width: 70px;
+    }
+
+    /* 🐕しっぽ */
+    .tail {
+      transform: translate(0px, -90px); /* 中心より右に寄せる */
+      width: 80px;
+    }
+
+    /* 🐾足 左右 */
+    .foot.left {
+      transform: translate(-160px, 120px); /* 中心より左下 */
+      width: 70px;
+    }
+
+    .foot.right {
+      transform: translate(100px, 120px);  /* 中心より右下 */
+      width: 70px;
+    }
+
 
     .scroll-list {
       max-height: 180px;
@@ -157,8 +196,8 @@
 <body>
 
   <button class="create-button" onclick="openModal()">
-    <span class="bookmark-icon">🔖</span>
     しおり作成
+    <span class="bookmark-icon">🐾</span>
   </button>
 
   <div id="modal">
@@ -171,11 +210,16 @@
       <button onclick="closeModal()">キャンセル</button>
     </div>
   </div>
-
+  <!-- コーギーパーツ -->
+  <img src="耳左.png" class="ear left" alt="耳左">
+  <img src="耳右.png" class="ear right" alt="耳右">
+  <img src="しっぽ.png" class="tail" alt="しっぽ">
+  <img src="左足.png" class="foot left" alt="あし左">
+  <img src="右足.png" class="foot right" alt="あし右">
 
 
   <div class="section">
-    <div class="section-title">今月の旅行 ✈️</div>
+    <div class="section-title">今月の旅行</div>
     <div id="currentTripArea"></div>
   </div>
 
