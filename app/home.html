@@ -222,11 +222,12 @@
       return trips ? JSON.parse(trips) : [];
     }
 
-    function renderTripButton(label, place, params) {
+    function renderTripButton(label, place, params, tripId) {
       const tripList = document.getElementById('tripList');
 
       const wrapper = document.createElement('div');
       wrapper.className = 'trip-item-wrapper';
+      wrapper.setAttribute('data-trip-id', tripId);  // 👈 IDを属性として保存
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
@@ -308,16 +309,13 @@
     }
     document.addEventListener("DOMContentLoaded", async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-
       if (error || !user) {
-        alert("ログイン情報がありません。ログインしてください。");
-        window.location.href = "login.html";
+        alert("ユーザー情報を取得できませんでした");
         return;
       }
 
       const userId = user.id;
 
-      // trip_schedules テーブルから自分のデータだけ取得
       const { data: trips, error: tripError } = await supabase
         .from("trip_schedules")
         .select("*")
@@ -325,47 +323,52 @@
         .order("start_date", { ascending: false });
 
       if (tripError) {
-        console.error("取得エラー:", tripError.message);
+        alert("しおりの取得に失敗しました: " + tripError.message);
         return;
       }
 
-      // 表示
-      trips.forEach(({ start_date, end_date, title }) => {
+      trips.forEach(({ id, start_date, end_date, title }) => {
         const start = new Date(start_date);
-        const year = start.getFullYear();
-        const month = (start.getMonth() + 1).toString().padStart(2, '0');
-        const params = `${year}.${month}.${start.getDate()}-${new Date(end_date).getDate()}`;
-        const label = `${year}.${month} in ${title}`;
-
-        renderTripButton(label, title, params);
+        const end = new Date(end_date);
+        const label = `${start.getFullYear()}.${(start.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")} in ${title}`;
+        const params = `${start.getFullYear()}.${(start.getMonth() + 1)}.${start.getDate()}-${end.getDate()}`;
+        renderTripButton(label, title, params, id);
       });
 
       updateCurrentTrip();
     });
 
-    function deleteSelectedTrips() {
+    async function deleteSelectedTrips() {
       const checkboxes = document.querySelectorAll('.trip-checkbox');
-      const trips = loadTripsFromStorage();
-      let updatedTrips = trips;
+      const tripIdsToDelete = [];
 
-      let deletedLabels = [];
-
-      checkboxes.forEach((checkbox, idx) => {
+      checkboxes.forEach((checkbox) => {
         if (checkbox.checked) {
-          const label = checkbox.nextSibling.textContent;
-          checkbox.parentElement.remove();  // 表示上削除
-          updatedTrips = updatedTrips.filter(t => t.label !== label);
-          deletedLabels.push(label);
+          const wrapper = checkbox.closest('.trip-item-wrapper');
+          const tripId = wrapper.getAttribute('data-trip-id');
+          if (tripId) tripIdsToDelete.push(tripId);
         }
       });
 
-      if (deletedLabels.length > 0) {
-        if (confirm(`${deletedLabels.length} 件のしおりを削除しますか？`)) {
-          saveTripsToStorage(updatedTrips);
-          updateCurrentTrip();
-        }
-      } else {
+      if (tripIdsToDelete.length === 0) {
         alert("削除するしおりを選択してください");
+        return;
+      }
+
+      if (!confirm(`${tripIdsToDelete.length} 件のしおりを削除しますか？`)) return;
+
+      const { error } = await supabase
+        .from('trip_schedules')
+        .delete()
+        .in('id', tripIdsToDelete);  // 👈 IDで削除！
+
+      if (error) {
+        alert("削除に失敗しました: " + error.message);
+      } else {
+        alert("削除が完了しました");
+        location.reload();
       }
     }
 
