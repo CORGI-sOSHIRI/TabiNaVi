@@ -78,7 +78,7 @@
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background-image: url('corgi_placeholder.png'); /* 正しいファイル名にする */
+      background-image: url('images/corgi_placeholder.png'); /* 正しいファイル名にする */
       background-repeat: no-repeat;
       background-position: center bottom;
       background-size: contain;
@@ -179,7 +179,7 @@
   <div class="header">
     <img src="logo_たびなび.png" class="logo" alt="ロゴ">
     <div class="trip-title"></div>
-    <img src="share_logo.png" class="share_button" id="shareButton" alt="共有">
+    <img src="images/share_logo.png" class="share_button" id="shareButton" alt="共有">
   </div>
 
   <div id="shareModal" class="modal">
@@ -466,7 +466,7 @@
           content.className = "tab-content" + (i === 0 ? " active" : "");
           content.innerHTML = `<div class="shiori-box">
             <button class="edit-icon-button" data-tab="${i}" onclick="openAddModal(${i})">
-              <img src="編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
+              <img src="images/編集ボタン.png" class="edit-icon" alt="編集" width="40" height="40">
             </button>
             <div class="timeline"></div>
           </div>`;
