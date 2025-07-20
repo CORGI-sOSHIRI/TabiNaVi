@@ -355,24 +355,30 @@
       }
     }
 
-    function deleteSchedule() {
+  async function deleteSchedule() {
       if (!editingEntry) return;
-
       if (!confirm("この予定を削除しますか？")) return;
 
-      const savedKey = getSavedKey();
-      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      const id = editingEntry.getAttribute('data-id'); // ← ここでidを取得
 
-      const time = editingEntry.getAttribute('data-time');
-      const desc = editingEntry.querySelector('.entry-label').textContent;
+      const { error } = await supabase
+        .from("time_schedule")
+        .delete()
+        .eq("id", id);  // ← idで削除！
+      console.log("削除対象のID:", id);
 
-      const updated = schedules.filter(entry => !(entry.time === time && entry.desc === desc && entry.tabIndex === currentTabIndex));
-      localStorage.setItem(savedKey, JSON.stringify(updated));
+
+      if (error) {
+        alert("削除に失敗しました");
+        console.error(error);
+        return;
+      }
 
       editingEntry.remove(); // DOMから削除
       editingEntry = null;
       closeAddModal();
     }
+
 
     async function saveSchedule() {
       const time = document.getElementById('timeInput').value;
@@ -419,15 +425,35 @@
           longitude: geo.lng,
         });
         
-        const { error } = await supabase.from('time_schedule').insert({
-          trip_id,
-          date: dayDate,
-          time: formattedTime,
-          location: desc,
-          description: note,
-          latitude: geo.lat,
-          longitude: geo.lng,
-        });
+        let supabaseResult;
+        if (editingEntry) {
+          // 編集時は Supabase で update（time/location を元に特定）
+          supabaseResult = await supabase
+            .from('time_schedule')
+            .update({
+              time: formattedTime,
+              location: desc,
+              description: note,
+              latitude: geo.lat,
+              longitude: geo.lng,
+            })
+            .eq("trip_id", trip_id)
+            .eq("date", dayDate)
+            .eq("time", editingEntry.getAttribute('data-time'))
+            .eq("location", editingEntry.querySelector('.entry-label').textContent);
+        } else {
+          // 新規追加時
+          supabaseResult = await supabase.from('time_schedule').insert({
+            trip_id,
+            date: dayDate,
+            time: formattedTime,
+            location: desc,
+            description: note,
+            latitude: geo.lat,
+            longitude: geo.lng,
+          });
+        }
+        const { error } = supabaseResult;
         
         if (error) {
           console.error("保存エラー:", error);
@@ -472,6 +498,7 @@
       const newEntry = document.createElement('div');
       newEntry.className = 'timeline-entry';
       newEntry.setAttribute('data-time', entry.time);
+      newEntry.setAttribute('data-id', entry.id); 
       newEntry.innerHTML = `${entry.time.slice(0,5)} <span class="entry-label" data-note="${entry.note || ''}" onclick="openAddModal(${entry.tabIndex}, this.parentElement)">${entry.desc}</span>`;
       timeline.appendChild(newEntry);
       sortTimelineEntries(timeline);
