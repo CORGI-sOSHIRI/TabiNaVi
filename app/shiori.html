@@ -413,7 +413,12 @@
 
       try {
         const formattedTime = time.length === 5 ? time + ":00" : time;
-        const geo = await geocodePlace(desc); // Google Maps から緯度経度取得
+        let geo = { lat: null, lng: null };
+        try {
+          geo = await geocodePlace(desc);  // 住所があれば取得
+        } catch (e) {
+          console.warn("住所が見つからなかったため、緯度経度を空で保存します");
+        }
 
         console.log("保存する予定:", {
           trip_id,
