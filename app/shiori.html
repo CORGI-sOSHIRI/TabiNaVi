@@ -225,8 +225,14 @@
 
   <!-- Google Maps JavaScript API を読み込む（headの最後に追加）-->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvPeUOz2JUCE9eZOK-S5bPY4rGTY6cvXU&callback=initMap"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const GOOGLE_MAPS_API_KEY = "AIzaSyBvPeUOz2JUCE9eZOK-S5bPY4rGTY6cvXU"; // ← あなたのキーに置換
+    const SUPABASE_URL = 'https://ebyxjgdbarcxzyerhiqm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVieXhqZ2RiYXJjeHp5ZXJoaXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMTcxMDksImV4cCI6MjA2Nzg5MzEwOX0.LXL7sCS7hEBYUDNZFpiJnDbsmZ7FpKbeNfMd2tLr08w';
+    const GOOGLE_MAPS_API_KEY = "AIzaSyBvPeUOz2JUCE9eZOK-S5bPY4rGTY6cvXU";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
     let currentTabIndex = 0;
     let editingEntry = null;
@@ -368,41 +374,77 @@
       closeAddModal();
     }
 
-    function saveSchedule() {
+    async function saveSchedule() {
       const time = document.getElementById('timeInput').value;
       const desc = document.getElementById('descInput').value;
       const note = document.getElementById('noteInput').value;
-      const savedKey = getSavedKey();
-      const schedules = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      const params = new URLSearchParams(window.location.search);
+      const trip_id = params.get("trip_id"); // URLから取得（例：?trip_id=xxx）
 
-      if (!time || !desc) {
-        alert("時間と目的地を入力してください");
+      if (!time || !desc || !trip_id) {
+        alert("時間・目的地・trip_id は必須です");
         return;
       }
 
-      if (editingEntry) {
-        const oldTime = editingEntry.getAttribute('data-time');
-        const oldDesc = editingEntry.querySelector('.entry-label').textContent;
-        for (let entry of schedules) {
-          if (entry.time === oldTime && entry.desc === oldDesc && entry.tabIndex === currentTabIndex) {
-            entry.time = time;
-            entry.desc = desc;
-            entry.note = note;
-            break;
-          }
-        }
-        localStorage.setItem(savedKey, JSON.stringify(schedules));
-        editingEntry.setAttribute('data-time', time);
-        editingEntry.innerHTML = `${time} <span class="entry-label" data-note="${note}" onclick="openAddModal(${currentTabIndex}, this.parentElement)">${desc}</span>`;
-        editingEntry = null;
+      const rawDate = params.get("date"); // 例: "2025.7.21-22"
+
+      // 1日目、2日目…に応じてtabIndexから日付を生成
+      const match = rawDate.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
+      let dayDate = null;
+      if (match) {
+        const [, year, month, startDay] = match.map(Number);
+        const dateObj = new Date(year, month - 1, startDay + currentTabIndex);
+
+        // 🔽 ここを修正！
+        const y = dateObj.getFullYear();
+        const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const d = dateObj.getDate().toString().padStart(2, '0');
+        dayDate = `${y}-${m}-${d}`;
       } else {
-        const newEntry = { time, desc, note, tabIndex: currentTabIndex };
-        schedules.push(newEntry);
-        localStorage.setItem(savedKey, JSON.stringify(schedules));
-        renderSchedule(newEntry);
+        alert("日付フォーマットが不正です");
+        return;
       }
 
-      closeAddModal();
+      try {
+        const formattedTime = time.length === 5 ? time + ":00" : time;
+        const geo = await geocodePlace(desc); // Google Maps から緯度経度取得
+
+        console.log("保存する予定:", {
+          trip_id,
+          date: dayDate,
+          time: formattedTime,
+          location: desc,
+          description: note,
+          latitude: geo.lat,
+          longitude: geo.lng,
+        });
+        
+        const { error } = await supabase.from('time_schedule').insert({
+          trip_id,
+          date: dayDate,
+          time: formattedTime,
+          location: desc,
+          description: note,
+          latitude: geo.lat,
+          longitude: geo.lng,
+        });
+        
+        if (error) {
+          console.error("保存エラー:", error);
+          throw error;
+        }
+        alert("予定が保存されました！");
+        closeAddModal();
+        renderSchedule({
+          time: formattedTime,
+          desc,
+          note,
+          tabIndex: currentTabIndex,
+        });
+        location.reload(); // 反映のためにリロード（必要に応じて renderSchedule で代替可能）
+      } catch (err) {
+        alert("保存に失敗しました: " + err.message);
+      }
     }
 
     function closeAddModal() {
@@ -415,11 +457,22 @@
     }
 
     function renderSchedule(entry) {
-      const timeline = document.querySelectorAll('.tab-content')[entry.tabIndex].querySelector('.timeline');
+      const timelineList = document.querySelectorAll('.tab-content');
+      if (!timelineList[entry.tabIndex]) {
+        console.warn("指定された tabIndex に対応する .tab-content が存在しません", entry);
+        return;
+      }
+
+      const timeline = timelineList[entry.tabIndex].querySelector('.timeline');
+      if (!timeline) {
+        console.warn("timeline が見つかりません", entry);
+        return;
+      }
+
       const newEntry = document.createElement('div');
       newEntry.className = 'timeline-entry';
       newEntry.setAttribute('data-time', entry.time);
-      newEntry.innerHTML = `${entry.time} <span class="entry-label" data-note="${entry.note || ''}" onclick="openAddModal(${entry.tabIndex}, this.parentElement)">${entry.desc}</span>`;
+      newEntry.innerHTML = `${entry.time.slice(0,5)} <span class="entry-label" data-note="${entry.note || ''}" onclick="openAddModal(${entry.tabIndex}, this.parentElement)">${entry.desc}</span>`;
       timeline.appendChild(newEntry);
       sortTimelineEntries(timeline);
     }
@@ -445,10 +498,13 @@
       document.getElementById('shareModal').style.display = 'block';
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(location.search);
       const date = params.get("date");
       const place = params.get("place");
+      const trip_id = params.get("trip_id");
+      console.log("trip_id:", trip_id);
+
       document.querySelector('.trip-title').textContent = `${date} in ${place}`;
 
       const match = date.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
@@ -474,11 +530,70 @@
         }
       }
 
-      const schedules = JSON.parse(localStorage.getItem(getSavedKey()) || "[]");
-      schedules.forEach(renderSchedule);
-      checkScheduleFeasibility(schedules); // ← ここ追加！
+      // ⬇️ dateパラメータから旅行開始・終了日を抽出
+      const rawDate = params.get("date"); // 例: "2025.7.21-23"
+      let startDate = null;
+      let endDate = null;
 
+      if (match) {
+        const [, year, month, startDay, endDay] = match.map(Number);
+        const start = new Date(year, month - 1, startDay);
+        const end = new Date(year, month - 1, endDay);
+
+        // 例: date = new Date(2025, 6, 21); // ← 月は0-indexed
+        startDate = new Date(year, month - 1, startDay).toISOString().slice(0, 10);
+        endDate = new Date(year, month - 1, endDay).toISOString().slice(0, 10);
+
+      }
+
+      // ✅ Supabaseから予定取得して表示（←ここに移動する！！）
+      const { data: schedules, error: scheduleError } = await supabase
+        .from("time_schedule")
+        .select("*")
+        .eq("trip_id", trip_id)
+        .order("date", { ascending: true })
+
+
+      console.log("旅行期間:", startDate, "〜", endDate);
+      console.log("取得データ:", schedules);
+
+      if (scheduleError) {
+        console.error("予定の取得エラー:", scheduleError.message);
+        alert("予定の取得に失敗しました");
+        return;
+      }
+
+      schedules.forEach(entry => {
+        const params = new URLSearchParams(location.search);
+        const rawDate = params.get("date"); // 例: "2025.7.21-23"
+        console.log("rawDate:", rawDate);
+        const match = rawDate.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})-(\d{1,2})$/);
+
+        let tabIndex = 0;
+        if (match) {
+          const [, year, month, startDay] = match.map(Number);
+
+          // 🔽 修正: 日付をタイムゾーンなしでパース
+          const [y, m, d] = entry.date.split("-").map(Number);
+          const entryDate = new Date(y, m - 1, d);
+          const baseDate = new Date(year, month - 1, startDay);
+          
+          tabIndex = Math.floor((entryDate - baseDate) / (1000 * 60 * 60 * 24));
+
+          if (tabIndex < 0) return; // 範囲外はスキップ
+        }
+        entry.tabIndex = tabIndex;
+        entry.desc = entry.location;
+        entry.note = entry.description;
+        renderSchedule(entry);
+      });
+
+
+
+      checkScheduleFeasibility(schedules);
     });
+
+
   </script>
 </body>
 </html>

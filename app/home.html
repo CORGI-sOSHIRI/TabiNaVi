@@ -237,6 +237,13 @@
     const SUPABASE_URL = 'https://ebyxjgdbarcxzyerhiqm.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVieXhqZ2RiYXJjeHp5ZXJoaXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMTcxMDksImV4cCI6MjA2Nzg5MzEwOX0.LXL7sCS7hEBYUDNZFpiJnDbsmZ7FpKbeNfMd2tLr08w';
 
+    let partOffsets = {
+      earLeft: { x: -170, y: -230 },
+      earRight: { x: 100, y: -230 },
+      tail: { x: 0, y: -90 },
+      footLeft: { x: -160, y: 120 },
+      footRight: { x: 100, y: 120 }
+    };
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function openModal() {
@@ -255,6 +262,26 @@
       document.getElementById('placeInput').value = '';
     }
 
+    function moveCorgiParts() {
+      // 値を少しずつ変更
+      partOffsets.earLeft.y -= 30;
+      partOffsets.earRight.y -= 30;
+      partOffsets.tail.y += 3;
+      partOffsets.footLeft.y += 30;
+      partOffsets.footRight.y += 30;
+
+      // DOMに反映
+      document.querySelector('.ear.left').style.transform = 
+        `translate(${partOffsets.earLeft.x}px, ${partOffsets.earLeft.y}px)`;
+      document.querySelector('.ear.right').style.transform = 
+        `translate(${partOffsets.earRight.x}px, ${partOffsets.earRight.y}px)`;
+      document.querySelector('.tail').style.transform = 
+        `translate(${partOffsets.tail.x}px, ${partOffsets.tail.y}px)`;
+      document.querySelector('.foot.left').style.transform = 
+        `translate(${partOffsets.footLeft.x}px, ${partOffsets.footLeft.y}px)`;
+      document.querySelector('.foot.right').style.transform = 
+        `translate(${partOffsets.footRight.x}px, ${partOffsets.footRight.y}px)`;
+    }
 
 
     function saveTripsToStorage(trips) {
@@ -281,7 +308,7 @@
       button.className = 'trip-button';
       button.textContent = label;
       button.onclick = () => {
-        location.href = `shiori.html?date=${encodeURIComponent(params)}&place=${encodeURIComponent(place)}`;
+        location.href = `shiori.html?date=${encodeURIComponent(params)}&place=${encodeURIComponent(place)}&trip_id=${encodeURIComponent(tripId)}`;
       };
 
       wrapper.appendChild(checkbox);
