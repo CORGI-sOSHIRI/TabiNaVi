@@ -4,3 +4,8 @@
 
 
 ## <div align="center">たびNaVi<div> 
+
+<p align="center">
+  アプリはこちら 👉  
+  <a href="https://staging.d3ptq02yxfp1x7.amplifyapp.com/" target="_blank">https://staging.d3ptq02yxfp1x7.amplifyapp.com/</a>
+</p>
